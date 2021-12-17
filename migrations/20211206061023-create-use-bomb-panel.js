@@ -14,12 +14,19 @@ module.exports = {
       user_id: {
         type: Sequelize.JSON
       },
+      panel_price: {
+        type: Sequelize.INTEGER
+      },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      update_at: {
+      updated_at: {
         allowNull: false,
+        type: Sequelize.DATE
+      },
+      deleted_at: {
+        allowNull: true,
         type: Sequelize.DATE
       }
     });

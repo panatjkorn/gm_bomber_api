@@ -10,8 +10,8 @@ const Op = Sequelize.Op;
 exports.registerUser = async (req, res) => {
     let phone_number = req.body.phone_number;
     const password = req.body.password;
-    const username = req.body.username;
     const name = req.body.name;
+    const wallet = 1000;
 
     if (phone_number.length != 10) {
         return res.status(400).json({
@@ -40,8 +40,8 @@ exports.registerUser = async (req, res) => {
         const created_user = await UserModel.create({
             phone_number: phone_number,
             password: bcrypt.hashSync(password, salt),
-            username : username,
-            name : name
+            name : name,
+            wallet : wallet
         })
 
         if(created_user) {
@@ -108,7 +108,7 @@ exports.Me = async (req, res) => {
     const user_id = req.params.userId;
 
     const user = await UserModel.findOne({
-            attributes: ['id', 'phone_number','name'],
+            attributes: ['id', 'phone_number','name','wallet'],
             where: {
                 id: user_id
             }

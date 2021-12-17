@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
   use_bomb_panel.init({
     user_id: DataTypes.INTEGER,
     panel_id: DataTypes.INTEGER,
-    status_id: DataTypes.INTEGER
+    panel_price: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'use_bomb_panel',

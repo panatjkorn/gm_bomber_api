@@ -1,14 +1,9 @@
 const {
-    bomb_panel: bomb_panelModel
+    bomb_panel: bomb_panelModel,
+    user : userModel
 } = require("../models")
 
 exports.getBombPanels = async (req, res) => {
-
-    // return res.status(200).json({
-    //     success: true,
-    //     message: "test",
-    //     data : 'testxxx'
-    // })
 
     try {
 
@@ -16,25 +11,10 @@ exports.getBombPanels = async (req, res) => {
         const limit = req.query.limit
         const offset = page ? page * limit : 0
 
-        //test
-        // const admin = await AdminModel.findOne({
-        //     attributes: ['id', 'password', 'is_active'],
-        //     include: [{
-        //         model: PermissionModel,
-        //         attributes: ['permissions']
-        //     },{
-        //         model: asda,
-        //         attributes: ['permissions']
-        //     }],
-        //     where: {
-        //         username: username
-        //     }
-        // })
-
         const bombs = await bomb_panelModel.findAll({
             attributes: ['id'],
             where: {
-                is_playing: false
+                user_id: null
             },
         })
         
@@ -66,8 +46,9 @@ exports.createBombPanel = async (req, res) => {
         panel_default_ex : generateBomb[0].shuffleArrayEx,
         open_panel : generateBomb[0].shuffleArrayEx,
         open_panel_default : [0,0,0],
+        user_id : null,
+        panel_price : null,
         is_won : null,
-        is_playing : false,
     }
 
     // return res.status(200).json({})
@@ -96,7 +77,7 @@ exports.getBombPanelsById = async (req, res) => {
 
     try {
         const panel = await bomb_panelModel.findOne({
-            attributes: ['id','panel_name','open_panel','open_panel_default','is_won'],
+            attributes: ['id','panel_name','open_panel','open_panel_default','is_won','user_id'],
             where: {
                 id: panel_id
             },
@@ -104,6 +85,7 @@ exports.getBombPanelsById = async (req, res) => {
         let _data = {
             id : panel.id,
             is_won : panel.is_won,
+            user_id : panel.user_id,
             default_panel : []
         }
 
@@ -134,70 +116,102 @@ exports.getBombPanelsById = async (req, res) => {
     }
 }
 
+
 exports.isPlayingGame = async (req, res) => {
     const {
         panel_id
     } = req.params
 
-    const updatePlayingGame = {
-        is_playing : true
+    const {
+        user_id,
+        panel_price
+    } = req.query
+
+    const findPanelDontHaveUserToPlay = await bomb_panelModel.findOne({
+        attributes: ['id'],
+        where: {
+            id: panel_id,
+            user_id : null
+        },
+    })
+
+    if(!findPanelDontHaveUserToPlay) {
+        return res.status(400).json({
+            success: false,
+            message: `ตารางนี้มี user เล่นไปแล้ว`,
+        })
+    }
+
+    const findUserIsHave = await userModel.findOne({
+        attributes: ['id','wallet'],
+        where: {
+            id: user_id,
+        },
+    })
+
+    // console.log('findUserIsHave',findUserIsHave.wallet);
+
+    if(!findUserIsHave) {
+        return res.status(400).json({
+            success: false,
+            message: `ไม่มี user ที่ระบุ`,
+        })
+    }
+    
+    if(parseInt(panel_price) <=0 || parseInt(panel_price) > 500) {
+        return res.status(400).json({
+            success: false,
+            message: `จำนวนเงินไม่ถูกต้อง`,
+        })
     }
 
     try {
-
-        const findPanel = await bomb_panelModel.findOne({
-            attributes: ['id'],
-            where: {
-                id: panel_id,
-                is_playing : false
-            },
-        })
-        
-        if(findPanel) {
-            const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
-                where: {
-                    id: panel_id
-                }
-            })
-
-            if (updatePlayingPanel[0] > 0) {
-                return res.status(200).json({
-                    success: true,
-                    message: `บันทึกสำเร็จ`
-                })
-            }
+        const updatePlayingGame = {
+            user_id : user_id,
+            panel_price : panel_price
         }
 
-    } catch (error) {
+        const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
+            where: {
+                id: panel_id
+            }
+        })
+
+        if(!updatePlayingPanel) {
+            return res.status(400).json({
+                success: false,
+                errors: error.message
+            })
+        }
+
+        const userPayMoneyToBuyPanel = await userModel.update({
+            wallet : findUserIsHave.wallet - panel_price
+        }, {
+            where: {
+                id: user_id
+            }
+        })
+
+        if(!userPayMoneyToBuyPanel) {
+            return res.status(400).json({
+                success: false,
+                errors: error.message
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message : 'บันทึกสำเร็จ'
+        })
+
+
+    } catch(err) {
         return res.status(400).json({
             success: false,
             errors: error.message
         })
     }
-    
-    // try {
-    //     const panel = await bomb_panelModel.findOne({
-    //         attributes: ['id','panel_name','panel_default_ex','is_won'],
-    //         where: {
-    //             id: panel_id
-    //         },
-    //     })
 
-    //     if (panel) {
-    //         return res.status(200).json({
-    //             success: true,
-    //             data: panel
-    //         })
-    //     }
-
-    //     return res.status(404).json({
-    //         success: false,
-    //         errors: `panel not found!`
-    //     })
-
-    // } catch(err) {
-    //     console.log(err);
-    // }
 }
 
 exports.checkResult = async (req, res) => {
@@ -205,102 +219,198 @@ exports.checkResult = async (req, res) => {
         panel_id
     } = req.params
 
-    if(parseInt(req.query.click_at) >= 0 && parseInt(req.query.click_at) < 9) {
-        const click_at = parseInt(req.query.click_at)
+    const {
+        user_id,
+        click_at
+    } = req.query
 
-        try {
-            const panel = await bomb_panelModel.findOne({
-                attributes: ['id','panel_default','open_panel','open_panel_default'],
-                where: {
-                    id: panel_id
-                },
-            })
+    if(parseInt(click_at) >= 0 && parseInt(click_at) < 9) {
+        const click_at = parseInt(click_at)
 
-            if(panel.open_panel.includes(click_at)) {
-                return res.status(409).json({
-                    success: false,
-                    errors: 'ขออภัยช่องนี้ถูกเลือกไปแล้ว'
-                });
-            }
+        const panel = await bomb_panelModel.findOne({
+            attributes: ['id','panel_default','open_panel','open_panel_default','user_id','panel_price'],
+            where: {
+                id: panel_id
+            },
+        })
 
-            panel.open_panel.push(click_at)
-            
-            if(panel) {
-                if(panel.dataValues.panel_default[click_at] == true) {
-                    panel.open_panel_default.push(1)
-                    const updateUserClick = await bomb_panelModel.update({
-                        open_panel: panel.open_panel,
-                        open_panel_default : panel.open_panel_default
-                    }, {
-                        where: {
-                            id: panel_id
-                        }
-                    })
-                    
-                    let countChoiceTrue =  0;
-                    for(let i = 0; i < panel.open_panel_default.length; i++) {
-                        if(panel.open_panel_default[i] == 1) {
-                            countChoiceTrue++;
-                        }
-                    }
-
-                    if(countChoiceTrue == 4) {
-                        this.setPanelWon({status : true , panel_id :panel_id});
-                    }
-                    return res.status(200).json({
-                        success: true,
-                        data: true
-                    })
-                } else {
-                    // console.log('boom!!');
-                    panel.open_panel_default.push(0)
-                    const updateUserClick = await bomb_panelModel.update({
-                        open_panel: panel.open_panel,
-                        open_panel_default : panel.open_panel_default
-                    }, {
-                        where: {
-                            id: panel_id
-                        }
-                    })
-                    
-                    
-                    this.setPanelWon({status : false , panel_id :panel_id});
-                    return res.status(200).json({
-                        success: true,
-                        data: false
-                    })
-                }
-            }
-            
-            return res.status(404).json({
-                success: false,
-                errors: `panel not found!`
-            })
-            
-        } catch(error) {
+        if(panel.user_id != user_id) {
             return res.status(400).json({
                 success: false,
-                errors: error.message
-            })
+                errors: 'ขออภัยมี user เล่นแผ่นนี้ไปแล้ว'
+            });
         }
+
+        if(panel.open_panel.includes(click_at)) {
+            return res.status(400).json({
+                success: false,
+                errors: 'ขออภัยช่องนี้ถูกเลือกไปแล้ว'
+            });
+        }
+
+        panel.open_panel.push(click_at)
+
+        if(panel) {
+            if(panel.dataValues.panel_default[click_at] == true) {
+                panel.open_panel_default.push(1)
+                const updateUserClick = await bomb_panelModel.update({
+                    open_panel: panel.open_panel,
+                    open_panel_default : panel.open_panel_default
+                }, {
+                    where: {
+                        id: panel_id
+                    }
+                })
+                
+                let countChoiceTrue =  0;
+                for(let i = 0; i < panel.open_panel_default.length; i++) {
+                    if(panel.open_panel_default[i] == 1) {
+                        countChoiceTrue++;
+                    }
+                }
+
+                if(countChoiceTrue == 4) {
+                    this.setPanelWon({status : true , panel_id :panel_id, panel_price : panel.panel_price});
+                    // this.setRewardUserWon({user_id:user_id})
+                }
+                return res.status(200).json({
+                    success: true,
+                    data: true
+                })
+            } else {
+                panel.open_panel_default.push(0)
+                const updateUserClick = await bomb_panelModel.update({
+                    open_panel: panel.open_panel,
+                    open_panel_default : panel.open_panel_default
+                }, {
+                    where: {
+                        id: panel_id
+                    }
+                })
+                
+                
+                this.setPanelWon({status : false , panel_id :panel_id});
+                return res.status(200).json({
+                    success: true,
+                    data: false
+                })
+            }
+        }
+
     } else {
-        return res.status(409).json({
+        return res.status(400).json({
             success: false,
             errors: 'กรุณาระบุค่าให้ถูกต้อง'
         })
     }
-    
 }
+
+// exports.checkResult = async (req, res) => {
+//     const {
+//         panel_id
+//     } = req.params
+
+//     if(parseInt(req.query.click_at) >= 0 && parseInt(req.query.click_at) < 9) {
+//         const click_at = parseInt(req.query.click_at)
+
+//         try {
+//             const panel = await bomb_panelModel.findOne({
+//                 attributes: ['id','panel_default','open_panel','open_panel_default'],
+//                 where: {
+//                     id: panel_id
+//                 },
+//             })
+
+//             if(panel.open_panel.includes(click_at)) {
+//                 return res.status(409).json({
+//                     success: false,
+//                     errors: 'ขออภัยช่องนี้ถูกเลือกไปแล้ว'
+//                 });
+//             }
+
+//             panel.open_panel.push(click_at)
+            
+//             if(panel) {
+//                 if(panel.dataValues.panel_default[click_at] == true) {
+//                     panel.open_panel_default.push(1)
+//                     const updateUserClick = await bomb_panelModel.update({
+//                         open_panel: panel.open_panel,
+//                         open_panel_default : panel.open_panel_default
+//                     }, {
+//                         where: {
+//                             id: panel_id
+//                         }
+//                     })
+                    
+//                     let countChoiceTrue =  0;
+//                     for(let i = 0; i < panel.open_panel_default.length; i++) {
+//                         if(panel.open_panel_default[i] == 1) {
+//                             countChoiceTrue++;
+//                         }
+//                     }
+
+//                     if(countChoiceTrue == 4) {
+//                         this.setPanelWon({status : true , panel_id :panel_id});
+//                     }
+//                     return res.status(200).json({
+//                         success: true,
+//                         data: true
+//                     })
+//                 } else {
+//                     // console.log('boom!!');
+//                     panel.open_panel_default.push(0)
+//                     const updateUserClick = await bomb_panelModel.update({
+//                         open_panel: panel.open_panel,
+//                         open_panel_default : panel.open_panel_default
+//                     }, {
+//                         where: {
+//                             id: panel_id
+//                         }
+//                     })
+                    
+                    
+//                     this.setPanelWon({status : false , panel_id :panel_id});
+//                     return res.status(200).json({
+//                         success: true,
+//                         data: false
+//                     })
+//                 }
+//             }
+            
+//             return res.status(404).json({
+//                 success: false,
+//                 errors: `panel not found!`
+//             })
+            
+//         } catch(error) {
+//             return res.status(400).json({
+//                 success: false,
+//                 errors: error.message
+//             })
+//         }
+//     } else {
+//         return res.status(409).json({
+//             success: false,
+//             errors: 'กรุณาระบุค่าให้ถูกต้อง'
+//         })
+//     }
+    
+// }
 
 exports.setPanelWon = async (req, res) => {
     const updateWon = await bomb_panelModel.update({
         is_won: req.status,
+        user_reward : req.status == true ? req.panel_price : 0
     }, {
         where: {
             id: req.panel_id
         }
     })
 }
+
+// exports.setRewardUserWon = async (req, res) => {
+    
+// }
 
 
 async function generateNumber(total_bomb) {

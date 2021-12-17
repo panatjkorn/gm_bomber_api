@@ -34,9 +34,21 @@ module.exports = {
       is_won: {
         type: Sequelize.BOOLEAN
       },
-      is_playing: {
-        type: Sequelize.BOOLEAN
+      user_id: {
+        type: Sequelize.JSON,
+        defaultValue: null
       },
+      panel_price: {
+        type: Sequelize.INTEGER,
+        defaultValue: null
+      },
+      user_reward: {
+        type: Sequelize.INTEGER,
+        defaultValue: null
+      },
+      // is_playing: {
+      //   type: Sequelize.BOOLEAN
+      // },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE

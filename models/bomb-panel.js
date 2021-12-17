@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      bomb_panel.hasOne(models.use_bomb_panel, { foreignKey: 'id' })
     }
   };
   bomb_panel.init({
@@ -20,8 +21,11 @@ module.exports = (sequelize, DataTypes) => {
     panel_default_ex: DataTypes.JSON,
     open_panel: DataTypes.JSON,
     open_panel_default: DataTypes.JSON,
+    user_id: DataTypes.INTEGER,
+    panel_price: DataTypes.INTEGER,
+    user_reward: DataTypes.INTEGER,
     is_won: DataTypes.BOOLEAN,
-    is_playing: DataTypes.BOOLEAN,
+    // is_playing: DataTypes.BOOLEAN,
 
   }, {
     sequelize,

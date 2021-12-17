@@ -10,7 +10,7 @@ module.exports = {
       },
       username: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       password: {
         type: Sequelize.STRING,
@@ -27,6 +27,10 @@ module.exports = {
       is_active: {
         type: Sequelize.BOOLEAN,
         defaultValue: true
+      },
+      wallet: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
       },
       created_at: {
         allowNull: false,
