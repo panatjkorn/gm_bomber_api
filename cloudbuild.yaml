@@ -1,0 +1,50 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull $_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME || exit 0']
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - '$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME'
+      - '--cache-from'
+      - '$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME'
+      - .
+      - '-f'
+      - Dockerfile
+    id: Build
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME'
+    id: Push
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    args:
+      - beta
+      - run
+      - services
+      - update
+      - $_SERVICE_NAME
+      - '--platform=managed'
+      - '--image=$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME'
+      - '--set-env-vars=DB_ENV=$_DB_ENV,DEPLOY_ENV=$_DEPLOY_ENV,DB_NAME=$_DB_NAME,DB_USERNAME=$_DB_USERNAME,DB_PASSWORD=$_DB_PASSWORD,CLOUD_SQL_CONNECTION_NAME=$_CLOUD_SQL_CONNECTION_NAME,KEY_FILENAME=$_KEY_FILENAME,SECRET=$_SECRET'
+      - '--region=$_DEPLOY_REGION'
+      - '--quiet'
+    id: Deploy
+    entrypoint: gcloud
+images:
+  - '$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$BRANCH_NAME'
+options:
+  substitutionOption: ALLOW_LOOSE
+substitutions:
+  _DEPLOY_REGION: asia-southeast1
+  _GCR_HOSTNAME: asia.gcr.io
+  _DB_ENV: cloud 
+  _DB_USERNAME: postgres
+  _DB_PASSWORD: tded123
+  _CLOUD_SQL_CONNECTION_NAME: tded-323912:asia-southeast1:tded-lotto
+  _KEY_FILENAME: ./service-account-key.json
+  _SECRET: gammunbomber
+tags:
+  - gcp-cloud-build-deploy-cloud-run
+  - gcp-cloud-build-deploy-cloud-run-managed
