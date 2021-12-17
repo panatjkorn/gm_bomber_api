@@ -13,7 +13,7 @@ const corsOptions = {
     'http://localhost:8080',
     'http://localhost:3000',
     'http://localhost:',
-    'https://lottery-offline-web-dev-76iziw7aaq-as.a.run.app'
+    'https://gamemun-bomber-dev-web-76iziw7aaq-as.a.run.app'
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   preflightContinue: false,
