@@ -41,7 +41,7 @@ substitutions:
   _GCR_HOSTNAME: asia.gcr.io
   _DB_ENV: cloud 
   _DB_USERNAME: postgres
-  _DB_PASSWORD: tded123
+  _DB_PASSWORD: lottery123
   _CLOUD_SQL_CONNECTION_NAME: lottery-offline:asia-southeast1:lottery-offline
   _KEY_FILENAME: ./service-account-key.json
   _SECRET: gammunbomber
