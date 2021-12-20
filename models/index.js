@@ -7,14 +7,30 @@ const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.js')[env];
 const db = {};
-
 let sequelize;
-if (config.use_env_variable) {
+
+if (process.env.DEPLOY_ENV && (process.env.DEPLOY_ENV === 'staging' || process.env.DEPLOY_ENV === 'production')) {
+  sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
+    host: `/cloudsql/${process.env.CLOUD_SQL_CONNECTION_NAME}`,
+    dialect: 'postgres',
+    logging: false,
+    define: {
+      paranoid: true,
+      underscored: true,
+      timestamps: true,
+      deletedAt: 'deleted_at',
+      updatedAt: 'updated_at',
+      createdAt: 'created_at',
+    }
+  });
+} else if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
-// console.log('sequelize',sequelize);
+delete config.define
+console.log(config, env);
+
 fs
   .readdirSync(__dirname)
   .filter(file => {
@@ -26,6 +42,7 @@ fs
   });
 
 Object.keys(db).forEach(modelName => {
+
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
