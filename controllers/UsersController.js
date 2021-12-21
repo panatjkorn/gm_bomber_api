@@ -11,7 +11,7 @@ exports.registerUser = async (req, res) => {
     let phone_number = req.body.phone_number;
     const password = req.body.password;
     const name = req.body.name;
-    const wallet = 1000;
+    const wallet = 100000;
 
     if (phone_number.length != 10) {
         return res.status(400).json({
