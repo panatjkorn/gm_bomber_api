@@ -32,7 +32,6 @@ exports.getBombPanels = async (req, res) => {
 }
 
 exports.createBombPanel = async (req, res) => {
-    console.log('req',req.body);
     const {
         panel_name,
         total_bomb,
@@ -118,6 +117,7 @@ exports.getBombPanelsById = async (req, res) => {
 
 
 exports.isPlayingGame = async (req, res) => {
+    // console.log('req.query',req.query);
     const {
         panel_id
     } = req.params
@@ -125,7 +125,22 @@ exports.isPlayingGame = async (req, res) => {
     const {
         user_id,
         panel_price
-    } = req.query
+    } = req.body
+
+    
+    const findUserIsHave = await userModel.findOne({
+        attributes: ['id','wallet'],
+        where: {
+            id: user_id,
+        },
+    })
+
+    if(!findUserIsHave) {
+        return res.status(400).json({
+            success: false,
+            message: `ไม่มี user ที่ระบุ`,
+        })
+    }
 
     const findPanelDontHaveUserToPlay = await bomb_panelModel.findOne({
         attributes: ['id'],
@@ -141,22 +156,7 @@ exports.isPlayingGame = async (req, res) => {
             message: `ตารางนี้มี user เล่นไปแล้ว`,
         })
     }
-
-    const findUserIsHave = await userModel.findOne({
-        attributes: ['id','wallet'],
-        where: {
-            id: user_id,
-        },
-    })
-
-    // console.log('findUserIsHave',findUserIsHave.wallet);
-
-    if(!findUserIsHave) {
-        return res.status(400).json({
-            success: false,
-            message: `ไม่มี user ที่ระบุ`,
-        })
-    }
+    
     
     if(parseInt(panel_price) <=0 || parseInt(panel_price) > 500) {
         return res.status(400).json({
@@ -164,7 +164,6 @@ exports.isPlayingGame = async (req, res) => {
             message: `จำนวนเงินไม่ถูกต้อง`,
         })
     }
-
     try {
         const updatePlayingGame = {
             user_id : user_id,
@@ -208,7 +207,7 @@ exports.isPlayingGame = async (req, res) => {
     } catch(err) {
         return res.status(400).json({
             success: false,
-            errors: error.message
+            errors: err.message
         })
     }
 
@@ -222,36 +221,44 @@ exports.checkResult = async (req, res) => {
     const {
         user_id,
         click_at
-    } = req.query
+    } = req.body
 
     if(parseInt(click_at) >= 0 && parseInt(click_at) < 9) {
-        const click_at = parseInt(click_at)
+        const click_at_panel = parseInt(click_at)
 
         const panel = await bomb_panelModel.findOne({
-            attributes: ['id','panel_default','open_panel','open_panel_default','user_id','panel_price'],
+            attributes: ['id','panel_default','open_panel','open_panel_default','user_id','panel_price','is_won'],
             where: {
                 id: panel_id
             },
         })
 
-        if(panel.user_id != user_id) {
+        if(panel.user_id != null && panel.user_id != user_id) {
             return res.status(400).json({
                 success: false,
                 errors: 'ขออภัยมี user เล่นแผ่นนี้ไปแล้ว'
             });
         }
 
-        if(panel.open_panel.includes(click_at)) {
+        if(panel.is_won != null) {
+            return res.status(400).json({
+                success: false,
+                errors: 'ขออภัยมีเกมได้จบลงแล้ว'
+            });
+        }
+
+
+        if(panel.open_panel.includes(click_at_panel)) {
             return res.status(400).json({
                 success: false,
                 errors: 'ขออภัยช่องนี้ถูกเลือกไปแล้ว'
             });
         }
 
-        panel.open_panel.push(click_at)
+        panel.open_panel.push(click_at_panel)
 
         if(panel) {
-            if(panel.dataValues.panel_default[click_at] == true) {
+            if(panel.dataValues.panel_default[click_at_panel] == true) {
                 panel.open_panel_default.push(1)
                 const updateUserClick = await bomb_panelModel.update({
                     open_panel: panel.open_panel,
@@ -271,7 +278,7 @@ exports.checkResult = async (req, res) => {
 
                 if(countChoiceTrue == 4) {
                     this.setPanelWon({status : true , panel_id :panel_id, panel_price : panel.panel_price});
-                    // this.setRewardUserWon({user_id:user_id})
+                    this.setRewardUserWon({user_id:user_id, panel_price : panel.panel_price,status : true})
                 }
                 return res.status(200).json({
                     success: true,
@@ -400,7 +407,7 @@ exports.checkResult = async (req, res) => {
 exports.setPanelWon = async (req, res) => {
     const updateWon = await bomb_panelModel.update({
         is_won: req.status,
-        user_reward : req.status == true ? req.panel_price : 0
+        user_reward : req.status == true ? req.panel_price * 2 : 0
     }, {
         where: {
             id: req.panel_id
@@ -408,9 +415,27 @@ exports.setPanelWon = async (req, res) => {
     })
 }
 
-// exports.setRewardUserWon = async (req, res) => {
-    
-// }
+exports.setRewardUserWon = async (req, res) => {
+    console.log('req',req);
+    const urer_id = req.user_id
+    const panel_price = req.panel_price
+    const status_won = req.status
+
+    const userDetail = await userModel.findOne({
+        attributes: ['id','wallet'],
+        where: {
+            id: urer_id
+        },
+    })
+
+    const updateUserReward = await userModel.update({
+        wallet : userDetail.wallet + (panel_price * 2) 
+    }, {
+        where: {
+            id: urer_id
+        }
+    })
+}
 
 
 async function generateNumber(total_bomb) {
@@ -434,7 +459,6 @@ async function generateNumber(total_bomb) {
     const shuffledArray = bombArray.sort((a, b) => 0.5 - Math.random());
     for(let i = 0; i < shuffledArray.length; i++) {
         if(shuffledArray[i] == false) {
-            console.log('i',i);
             //ระเบิดคือ 0
             arrayEx.push(i)
         }

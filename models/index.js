@@ -29,7 +29,7 @@ if (process.env.DEPLOY_ENV && (process.env.DEPLOY_ENV === 'staging' || process.e
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 delete config.define
-console.log(config, env);
+// console.log(config, env);
 
 fs
   .readdirSync(__dirname)

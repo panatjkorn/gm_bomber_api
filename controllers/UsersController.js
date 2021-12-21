@@ -83,7 +83,6 @@ exports.login = async (req, res) => {
         }
 
         const check_password = bcrypt.compareSync(password, user.password);
-        console.log('check_password',check_password);
 
         if (!check_password) {
             return res.status(400).json({
@@ -114,7 +113,7 @@ exports.Me = async (req, res) => {
             }
         });
 
-        console.log('user',user);
+        // console.log('user',user);
         return res.status(200).json({
             success: true,
             data: user
