@@ -416,7 +416,7 @@ exports.setPanelWon = async (req, res) => {
 }
 
 exports.setRewardUserWon = async (req, res) => {
-    console.log('req',req);
+    // console.log('req',req);
     const urer_id = req.user_id
     const panel_price = req.panel_price
     const status_won = req.status
