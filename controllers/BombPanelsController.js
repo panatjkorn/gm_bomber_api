@@ -76,7 +76,7 @@ exports.getBombPanelsById = async (req, res) => {
 
     try {
         const panel = await bomb_panelModel.findOne({
-            attributes: ['id','panel_name','open_panel','open_panel_default','is_won','user_id'],
+            attributes: ['id','panel_name','open_panel','open_panel_default','is_won','user_id','panel_price'],
             where: {
                 id: panel_id
             },
@@ -85,6 +85,7 @@ exports.getBombPanelsById = async (req, res) => {
             id : panel.id,
             is_won : panel.is_won,
             user_id : panel.user_id,
+            price : panel.panel_price,
             default_panel : []
         }
 
