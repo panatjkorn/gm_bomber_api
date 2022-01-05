@@ -103,22 +103,22 @@ exports.login = async (req, res) => {
     }
 }
 
-exports.Me = async (req, res) => {
-    const user_id = req.params.userId;
+// exports.Me = async (req, res) => {
+//     const user_id = req.params.userId;
 
-    const user = await UserModel.findOne({
-            attributes: ['id', 'phone_number','name','wallet'],
-            where: {
-                id: user_id
-            }
-        });
+//     const user = await UserModel.findOne({
+//             attributes: ['id', 'phone_number','name','wallet'],
+//             where: {
+//                 id: user_id
+//             }
+//         });
 
-        // console.log('user',user);
-        return res.status(200).json({
-            success: true,
-            data: user
-        });
-}
+//         // console.log('user',user);
+//         return res.status(200).json({
+//             success: true,
+//             data: user
+//         });
+// }
 // exports.getUsers = async (req, res) => {
 
     
