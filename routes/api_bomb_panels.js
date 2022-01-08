@@ -1,8 +1,8 @@
 const express = require("express")
 const router = express.Router()
-const {
-    authUser
-} = require("../middleware/authUser");
+// const {
+//     authUser
+// } = require("../middleware/authUser");
 
 const {
     getBombPanels,
@@ -16,6 +16,6 @@ router.get("/",getBombPanels)
 router.post("/",createBombPanel)
 router.get("/:panel_id",getBombPanelsById)
 router.put("/:panel_id/is_playing",isPlayingGame)
-router.get("/:panel_id/check_result",checkResult)
+router.post("/:panel_id/check_result",checkResult)
 
 module.exports = router

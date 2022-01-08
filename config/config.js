@@ -1,9 +1,10 @@
 require('dotenv').config()
-const dbHost = process.env.DB_ENV === "cloud" ? process.env.DB_HOST : process.env.DB_PRODUCTION_HOST
-const dbUsername = process.env.DB_ENV === "cloud" ? process.env.DB_USERNAME : process.env.DB_PRODUCTION_USERNAME
-const dbPass = process.env.DB_ENV === "cloud" ? process.env.DB_PASSWORD : process.env.DB_PRODUCTION_PASSWORD
-const dbName = process.env.DB_ENV === "cloud" ? process.env.DB_NAME : process.env.DB_PRODUCTION_NAME
-const dbport = process.env.DB_ENV === "cloud" ? process.env.DB_PORT : process.env.DB_PRODUCTION_PORT
+console.log('process.env.DB_ENV',process.env.DB_ENV);
+const dbHost = process.env.DB_ENV === "local" ? process.env.DB_HOST : process.env.DB_PRODUCTION_HOST
+const dbUsername = process.env.DB_ENV === "local" ? process.env.DB_USERNAME : process.env.DB_PRODUCTION_USERNAME
+const dbPass = process.env.DB_ENV === "local" ? process.env.DB_PASSWORD : process.env.DB_PRODUCTION_PASSWORD
+const dbName = process.env.DB_ENV === "local" ? process.env.DB_NAME : process.env.DB_PRODUCTION_NAME
+const dbport = process.env.DB_ENV === "local" ? process.env.DB_PORT : process.env.DB_PRODUCTION_PORT
 
 
 module.exports = {
