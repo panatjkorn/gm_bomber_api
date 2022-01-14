@@ -212,25 +212,25 @@ exports.isPlayingGame = async (req, res) => {
                     });
                 }
         
-                const userPayMoneyToBuyPanel = await userModel.update({
-                    wallet : findUserIsHave.wallet - panel_price
-                }, {
-                    where: {
-                        id: user_id
-                    }
-                })
+                // const userPayMoneyToBuyPanel = await userModel.update({
+                //     wallet : findUserIsHave.wallet - panel_price
+                // }, {
+                //     where: {
+                //         id: user_id
+                //     }
+                // })
         
-                if(!userPayMoneyToBuyPanel) {
-                    return res.status(400).json({
-                        success: false,
-                        errors: error.message
-                    })
-                }
+                // if(!userPayMoneyToBuyPanel) {
+                //     return res.status(400).json({
+                //         success: false,
+                //         errors: error.message
+                //     })
+                // }
         
-                return res.status(200).json({
-                    success: true,
-                    message : 'บันทึกสำเร็จ'
-                })
+                // return res.status(200).json({
+                //     success: true,
+                //     message : 'บันทึกสำเร็จ'
+                // })
         
         
             } catch(err) {
@@ -254,102 +254,6 @@ exports.isPlayingGame = async (req, res) => {
     }
 }
 
-// exports.isPlayingGame = async (req, res) => {
-//     const {
-//         panel_id
-//     } = req.params
-
-//     const {
-//         user_id,
-//         panel_price
-//     } = req.body
-
-    
-//     const findUserIsHave = await userModel.findOne({
-//         attributes: ['id','wallet'],
-//         where: {
-//             id: user_id,
-//         },
-//     })
-
-//     if(!findUserIsHave) {
-//         return res.status(400).json({
-//             success: false,
-//             message: `ไม่มี user ที่ระบุ`,
-//         })
-//     }
-
-//     const findPanelDontHaveUserToPlay = await bomb_panelModel.findOne({
-//         attributes: ['id'],
-//         where: {
-//             id: panel_id,
-//             user_id : null
-//         },
-//     })
-
-//     if(!findPanelDontHaveUserToPlay) {
-//         return res.status(400).json({
-//             success: false,
-//             message: `ตารางนี้มี user เล่นไปแล้ว`,
-//         })
-//     }
-    
-    
-//     if(parseInt(panel_price) <=0 || parseInt(panel_price) > 500) {
-//         return res.status(400).json({
-//             success: false,
-//             message: `จำนวนเงินไม่ถูกต้อง`,
-//         })
-//     }
-//     try {
-//         const updatePlayingGame = {
-//             user_id : user_id,
-//             panel_price : panel_price
-//         }
-
-//         const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
-//             where: {
-//                 id: panel_id
-//             }
-//         })
-
-//         if(!updatePlayingPanel) {
-//             return res.status(400).json({
-//                 success: false,
-//                 errors: error.message
-//             })
-//         }
-
-//         const userPayMoneyToBuyPanel = await userModel.update({
-//             wallet : findUserIsHave.wallet - panel_price
-//         }, {
-//             where: {
-//                 id: user_id
-//             }
-//         })
-
-//         if(!userPayMoneyToBuyPanel) {
-//             return res.status(400).json({
-//                 success: false,
-//                 errors: error.message
-//             })
-//         }
-
-//         return res.status(200).json({
-//             success: true,
-//             message : 'บันทึกสำเร็จ'
-//         })
-
-
-//     } catch(err) {
-//         return res.status(400).json({
-//             success: false,
-//             errors: err.message
-//         })
-//     }
-
-// }
-
 exports.checkResult = async (req, res) => {
     const {
         panel_id
@@ -357,8 +261,12 @@ exports.checkResult = async (req, res) => {
 
     const {
         uu_id,
+        b,
+        tk,
         click_at
     } = req.body
+
+    let token = `${b}[SALT]${tk}[SALT]${uu_id}`
 
     if(parseInt(click_at) >= 0 && parseInt(click_at) < 9) {
         const click_at_panel = parseInt(click_at)
@@ -414,8 +322,15 @@ exports.checkResult = async (req, res) => {
                 }
 
                 if(countChoiceTrue == 4) {
-                    this.setPanelWon({status : true , panel_id :panel_id, panel_price : panel.panel_price});
-                    this.setRewardUserWon({uu_id:uu_id, panel_price : panel.panel_price,status : true})
+                    const _data = {
+                        status : true , 
+                        panel_id :panel_id, 
+                        panel_price : panel.panel_price,
+                        token : token
+                    }
+
+                    this.setPanelWon(_data);
+                    // this.setRewardUserWon({uu_id:uu_id, panel_price : panel.panel_price,status : true})
                 }
                 return res.status(200).json({
                     success: true,
@@ -449,129 +364,24 @@ exports.checkResult = async (req, res) => {
     }
 }
 
-// exports.checkResult = async (req, res) => {
-//     const {
-//         panel_id
-//     } = req.params
-
-//     if(parseInt(req.query.click_at) >= 0 && parseInt(req.query.click_at) < 9) {
-//         const click_at = parseInt(req.query.click_at)
-
-//         try {
-//             const panel = await bomb_panelModel.findOne({
-//                 attributes: ['id','panel_default','open_panel','open_panel_default'],
-//                 where: {
-//                     id: panel_id
-//                 },
-//             })
-
-//             if(panel.open_panel.includes(click_at)) {
-//                 return res.status(409).json({
-//                     success: false,
-//                     errors: 'ขออภัยช่องนี้ถูกเลือกไปแล้ว'
-//                 });
-//             }
-
-//             panel.open_panel.push(click_at)
-            
-//             if(panel) {
-//                 if(panel.dataValues.panel_default[click_at] == true) {
-//                     panel.open_panel_default.push(1)
-//                     const updateUserClick = await bomb_panelModel.update({
-//                         open_panel: panel.open_panel,
-//                         open_panel_default : panel.open_panel_default
-//                     }, {
-//                         where: {
-//                             id: panel_id
-//                         }
-//                     })
-                    
-//                     let countChoiceTrue =  0;
-//                     for(let i = 0; i < panel.open_panel_default.length; i++) {
-//                         if(panel.open_panel_default[i] == 1) {
-//                             countChoiceTrue++;
-//                         }
-//                     }
-
-//                     if(countChoiceTrue == 4) {
-//                         this.setPanelWon({status : true , panel_id :panel_id});
-//                     }
-//                     return res.status(200).json({
-//                         success: true,
-//                         data: true
-//                     })
-//                 } else {
-//                     // console.log('boom!!');
-//                     panel.open_panel_default.push(0)
-//                     const updateUserClick = await bomb_panelModel.update({
-//                         open_panel: panel.open_panel,
-//                         open_panel_default : panel.open_panel_default
-//                     }, {
-//                         where: {
-//                             id: panel_id
-//                         }
-//                     })
-                    
-                    
-//                     this.setPanelWon({status : false , panel_id :panel_id});
-//                     return res.status(200).json({
-//                         success: true,
-//                         data: false
-//                     })
-//                 }
-//             }
-            
-//             return res.status(404).json({
-//                 success: false,
-//                 errors: `panel not found!`
-//             })
-            
-//         } catch(error) {
-//             return res.status(400).json({
-//                 success: false,
-//                 errors: error.message
-//             })
-//         }
-//     } else {
-//         return res.status(409).json({
-//             success: false,
-//             errors: 'กรุณาระบุค่าให้ถูกต้อง'
-//         })
-//     }
-    
-// }
-
 exports.setPanelWon = async (req, res) => {
     const updateWon = await bomb_panelModel.update({
         is_won: req.status,
-        user_reward : req.status == true ? req.panel_price * 2 : 0
+        user_reward : req.status == true ? req.panel_price * 3 : 0
     }, {
         where: {
             id: req.panel_id
         }
     })
-}
 
-exports.setRewardUserWon = async (req, res) => {
-    // console.log('req',req);
-    const uu_id = req.uu_id
-    const panel_price = req.panel_price
-    const status_won = req.status
+    if(updateWon && req.status == true) {
+        const  _data = {
+            modify_cost: req.panel_price * 3,
+            wallet_token: req.token
+        }
 
-    // const userDetail = await userModel.findOne({
-    //     attributes: ['id','wallet'],
-    //     where: {
-    //         id: urer_id
-    //     },
-    // })
-
-    // const updateUserReward = await userModel.update({
-    //     wallet : userDetail.wallet + (panel_price * 2) 
-    // }, {
-    //     where: {
-    //         id: urer_id
-    //     }
-    // })
+        this.modifyCreditUser(_data)
+    }
 }
 
 async function generateNumber(total_bomb) {
@@ -666,18 +476,73 @@ exports.userBuyPanel = async (req, res) => {
     const {
         uu_id,
         panel_price,
-        panel_id
+        panel_id,
+        b,
+        tk,
     } = req.body
 
+    let token = `${b}[SALT]${tk}[SALT]${uu_id}`
+
+    const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/user-credit?wallet_token=${token}`
+    try {
+        const getUserCredit = await axios.get(url)
+        let user_credit = await getUserCredit.data.data.credit;
+        if(user_credit < panel_price) {
+            return res.status(400).json({
+                success: false,
+                errors: 'จำนวนเงินไม่เพียงพอ'
+            })
+        }
+
+    } catch(err) {
+        return res.status(400).json({
+            success: false,
+            errors: error.message
+        })
+    }
 
     try {
+
         const getPanelById = await bomb_panelModel.findOne({
             attributes: ['id','panel_name','open_panel','open_panel_default','is_won','uu_id','panel_price'],
             where: {
-                id: panel_id
+                id: panel_id,
+                uu_id : null
             },
         })
-        // console.log('getPanelById',getPanelById);
+        // console.log('getPanelById',getPanelById.id);
+
+        if(!getPanelById) {
+            return res.status(400).json({
+                success: false,
+                message: `ตารางนี้มี user เล่นไปแล้ว`,
+            })
+        }
+
+        if(getPanelById) {
+            const updatePlayingGame = {
+                uu_id : uu_id,
+                panel_price : panel_price,
+            }
+    
+            const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
+                where: {
+                    id: getPanelById.id
+                }
+            })
+            
+            if(updatePlayingPanel) {
+                //ตัด point ตอนเล่น
+                const _data = {
+                    modify_cost : -panel_price,
+                    wallet_token : token,
+                }
+
+                this.modifyCreditUser(_data)
+            }
+            // console.log('updatePlayingPanel',updatePlayingPanel);
+        }
+
     } catch(error) {
         return res.status(400).json({
             success: false,
@@ -685,6 +550,31 @@ exports.userBuyPanel = async (req, res) => {
         })
     }
 }
+
+//ตัดเงิน user หงฟ้า
+exports.modifyCreditUser = async (req, res) => {
+    const  _data = {
+        modify_cost: req.modify_cost,
+        wallet_token: req.wallet_token
+    }
+
+    const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/modify-credit`
+
+    try {
+        const modifyCredit = await axios.post(url,_data)
+        return res.status(200).json({
+            success: true,
+            data: modifyCredit.data
+        })
+        
+    } catch(error) {
+        return res.status(400).json({
+            success: false,
+            errors: error.message
+        });
+    }
+}
+
 
 // exports.isPlayingGame = async (req, res) => {
 //     const {
