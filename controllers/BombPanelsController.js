@@ -337,22 +337,10 @@ exports.checkResult = async (req, res) => {
                             wallet_token : isUserWon.wallet_token
                         }
                     }
-                    console.log('isUserWonxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',dataRes);
                     return res.status(200).json({
                         success: true,
                         data: dataRes
                     })
-                    // if(isUserWon.wallet_token.length > 0) {
-                    //     return res.status(200).json({
-                    //         success: true,
-                    //         data: isUserWon
-                    //     })
-                    // } else {
-                    //     // return res.status(200).json({
-                    //     //     success: true,
-                    //     //     data: isUserWon
-                    //     // })
-                    // }
                     // this.setRewardUserWon({uu_id:uu_id, panel_price : panel.panel_price,status : true})
                 } else {
                     return res.status(200).json({
