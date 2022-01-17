@@ -58,7 +58,7 @@ exports.createBombPanel = async (req, res) => {
         // console.log('createBomb',createBomb);
         return res.status(201).json({
             success: true,
-            message: 'created Bomb Panel success',
+            massage: 'created Bomb Panel success',
             // data : _data
         })
 
@@ -153,7 +153,7 @@ exports.isPlayingGame = async (req, res) => {
     if (!findPanelDontHaveUserToPlay) {
         return res.status(400).json({
             success: false,
-            message: `ตารางนี้มี user เล่นไปแล้ว`,
+            massage: `ตารางนี้มี user เล่นไปแล้ว`,
         })
     }
 
@@ -161,7 +161,7 @@ exports.isPlayingGame = async (req, res) => {
     if (parseInt(panel_price) <= 0 || parseInt(panel_price) > 500) {
         return res.status(400).json({
             success: false,
-            message: `จำนวนเงินไม่ถูกต้อง`,
+            massage: `จำนวนเงินไม่ถูกต้อง`,
         })
     }
 
@@ -278,7 +278,7 @@ exports.checkResult = async (req, res) => {
             },
         })
 
-        if (panel.uu_id != null && panel.uu_id != uu_id) {
+        if (panel.uu_id != null && panel.uu_id != tk) {
             return res.status(400).json({
                 success: false,
                 errors: 'ขออภัยมี user เล่นแผ่นนี้ไปแล้ว'
@@ -329,13 +329,40 @@ exports.checkResult = async (req, res) => {
                         token: token
                     }
 
-                    this.setPanelWon(_data);
+                    let isUserWon = await setPanelWon(_data);
+                    const dataRes = {
+                        value : true,
+                        user : {
+                            user_credit : isUserWon.user_credit,
+                            wallet_token : isUserWon.wallet_token
+                        }
+                    }
+                    console.log('isUserWonxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',dataRes);
+                    return res.status(200).json({
+                        success: true,
+                        data: dataRes
+                    })
+                    // if(isUserWon.wallet_token.length > 0) {
+                    //     return res.status(200).json({
+                    //         success: true,
+                    //         data: isUserWon
+                    //     })
+                    // } else {
+                    //     // return res.status(200).json({
+                    //     //     success: true,
+                    //     //     data: isUserWon
+                    //     // })
+                    // }
                     // this.setRewardUserWon({uu_id:uu_id, panel_price : panel.panel_price,status : true})
+                } else {
+                    return res.status(200).json({
+                        success: true,
+                        data: {
+                            value : true,
+                            user : null
+                        }
+                    })
                 }
-                return res.status(200).json({
-                    success: true,
-                    data: true
-                })
             } else {
                 panel.open_panel_default.push(0)
                 const updateUserClick = await bomb_panelModel.update({
@@ -348,13 +375,20 @@ exports.checkResult = async (req, res) => {
                 })
 
 
-                this.setPanelWon({
+                let isUserFaild = await setPanelWon({
                     status: false,
-                    panel_id: panel_id
+                    panel_id: panel_id,
+                    panel_price: 0,
+                    token: token
                 });
+                
+                // console.log('isUserFaild',isUserFaild);
                 return res.status(200).json({
                     success: true,
-                    data: false
+                    data: {
+                        value : false,
+                        user : isUserFaild
+                    }
                 })
             }
         }
@@ -367,34 +401,73 @@ exports.checkResult = async (req, res) => {
     }
 }
 
-exports.setPanelWon = async (req, res) => {
+async function setPanelWon(data) {
+    // console.log('data',data);
     const updateWon = await bomb_panelModel.update({
-        is_won: req.status,
-        user_reward: req.status == true ? req.panel_price * 3 : 0
+        is_won: data.status,
+        user_reward: data.status == true ? data.panel_price * 3 : 0
     }, {
         where: {
-            id: req.panel_id
+            id: data.panel_id
         }
     })
 
-    if (updateWon && req.status == true) {
+    if (updateWon && data.status == true) {
+        //ชนะ
         const _data = {
-            modify_cost: req.panel_price * 3,
-            wallet_token: req.token
+            modify_cost: data.panel_price * 3,
+            wallet_token: data.token
         }
 
         const setWon = await modifyCreditUser(_data)
+        const dataResponse = {
+            user_credit : setWon.data.user_credit,
+            wallet_token: setWon.data.wallet_token
+        }
+        return dataResponse
+    } else {
+        //แพ้
+        const _data = {
+            modify_cost: 0,
+            wallet_token: data.token
+        }
 
-        return res.status(200).json({
-            success: true,
-            data: setWon
-        })
+        const setWon = await modifyCreditUser(_data)
+        const dataResponse = {
+            user_credit : setWon.data.user_credit,
+            wallet_token: setWon.data.wallet_token
+        }
+        return dataResponse
     }
-    return res.status(400).json({
-        success: false,
-        errors: error.message
-    })
 }
+// exports.setPanelWon = async (req, res) => {
+//     const updateWon = await bomb_panelModel.update({
+//         is_won: req.status,
+//         user_reward: req.status == true ? req.panel_price * 3 : 0
+//     }, {
+//         where: {
+//             id: req.panel_id
+//         }
+//     })
+
+//     if (updateWon && req.status == true) {
+//         const _data = {
+//             modify_cost: req.panel_price * 3,
+//             wallet_token: req.token
+//         }
+
+//         const setWon = await modifyCreditUser(_data)
+
+//         return res.status(200).json({
+//             success: true,
+//             data: setWon
+//         })
+//     }
+//     return res.status(400).json({
+//         success: false,
+//         errors: error.message
+//     })
+// }
 
 async function generateNumber(total_bomb) {
     let totalSlot = 9
@@ -509,7 +582,7 @@ exports.userBuyPanel = async (req, res) => {
         if (user_credit < panel_price) {
             return res.status(400).json({
                 success: false,
-                errors: 'จำนวนเงินไม่เพียงพอ'
+                massage: 'จำนวนเงินไม่เพียงพอ'
             })
         }
 
@@ -525,13 +598,13 @@ exports.userBuyPanel = async (req, res) => {
         if (!getPanelById) {
             return res.status(400).json({
                 success: false,
-                message: `ตารางนี้มี user เล่นไปแล้ว`,
+                massage: `ตารางนี้มี user เล่นไปแล้ว`,
             })
         }
 
         if (getPanelById) {
             const updatePlayingGame = {
-                uu_id: uu_id,
+                uu_id: tk,
                 panel_price: panel_price,
             }
 
@@ -549,16 +622,24 @@ exports.userBuyPanel = async (req, res) => {
                 }
 
                 const responser_modi = await modifyCreditUser(data)
+                console.log('responser_modi',responser_modi);
 
-                return res.status(200).json({
-                    success: true,
-                    data: responser_modi
-                })
+                if(responser_modi) {
+                    return res.status(200).json({
+                        success: true,
+                        data: responser_modi
+                    })
+                } else {
+                    return res.status(400).json({
+                        success: true,
+                        massage : 'token faild'
+                    })
+                }
             }
-            return res.status(200).json({
-                success: true,
-                data: responser_modi
-            })
+            // return res.status(200).json({
+            //     success: true,
+            //     data: responser_modi
+            // })
         }
 
         return res.status(404).json({
@@ -591,127 +672,3 @@ async function modifyCreditUser(data) {
         console.log(error.message);
     }
 }
-
-
-// exports.isPlayingGame = async (req, res) => {
-//     const {
-//         panel_id
-//     } = req.params
-
-//     const {
-//         uu_id,
-//         panel_price,
-//         token
-//     } = req.body
-
-//     const findPanelDontHaveUserToPlay = await bomb_panelModel.findOne({
-//         attributes: ['id'],
-//         where: {
-//             id: panel_id,
-//             uu_id : null
-//         },
-//     })
-
-//     if(!findPanelDontHaveUserToPlay) {
-//         return res.status(400).json({
-//             success: false,
-//             message: `ตารางนี้มี user เล่นไปแล้ว`,
-//         })
-//     }
-
-
-//     if(parseInt(panel_price) <=0 || parseInt(panel_price) > 500) {
-//         return res.status(400).json({
-//             success: false,
-//             message: `จำนวนเงินไม่ถูกต้อง`,
-//         })
-//     }
-
-//     //GetUserCredit
-//     const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/user-credit?wallet_token=${token}`
-
-//     try {
-//         const getUserCredit = await axios.get(url)
-
-//         if(getUserCredit && getUserCredit.data.data.points >= panel_price) {
-//             try {
-//                 const updatePlayingGame = {
-//                     uu_id : uu_id,
-//                     panel_price : panel_price
-//                 }
-
-//                 const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
-//                     where: {
-//                         id: panel_id
-//                     }
-//                 })
-
-//                 if(!updatePlayingPanel) {
-//                     return res.status(400).json({
-//                         success: false,
-//                         errors: error.message
-//                     })
-//                 }
-
-//                 //ตัด point ตอนเล่น
-//                 const _data = {
-//                     modify_cost : -panel_price,
-//                     wallet_token : token
-//                 }
-
-//                 console.log('_data',_data);
-
-//                 const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/modify-credit`
-
-//                 try {
-//                     const modifyCredit = await axios.post(url,_data)
-//                     console.log('modifyCredit',modifyCredit);
-
-//                 } catch(error) {
-//                     return res.status(400).json({
-//                         success: false,
-//                         errors: error.message
-//                     });
-//                 }
-
-//                 const userPayMoneyToBuyPanel = await userModel.update({
-//                     wallet : findUserIsHave.wallet - panel_price
-//                 }, {
-//                     where: {
-//                         id: user_id
-//                     }
-//                 })
-
-//                 if(!userPayMoneyToBuyPanel) {
-//                     return res.status(400).json({
-//                         success: false,
-//                         errors: error.message
-//                     })
-//                 }
-
-//                 return res.status(200).json({
-//                     success: true,
-//                     message : 'บันทึกสำเร็จ'
-//                 })
-
-
-//             } catch(err) {
-//                 return res.status(400).json({
-//                     success: false,
-//                     errors: err.message
-//                 })
-//             }
-//         } else {
-//             return res.status(400).json({
-//                 success: false,
-//                 errors: 'จำนวนเงินไม่เพียงพอ'
-//             })
-//         }
-
-//     } catch(error) {
-//         return res.status(400).json({
-//             success: false,
-//             errors: error.message
-//         });
-//     }
-// }
