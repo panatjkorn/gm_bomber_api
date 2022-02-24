@@ -4,10 +4,11 @@ exports.initWalletGame = async (req, res) => {
     const token = req.query.token;
     
     //GetUserCredit
-    const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/user-credit?wallet_token=${token}`
+    const url = `https://demo-game-api-dev-76iziw7aaq-as.a.run.app/api/v1/user-game/credit?wallet_token=${token}`
 
     try {
         const getUserCredit = await axios.get(url)
+        // console.log('getUserCredit',getUserCredit);
         if(getUserCredit) {
             return res.status(200).json({
                 success: true,

@@ -130,7 +130,7 @@ exports.getBombPanelsById = async (req, res) => {
     }
 }
 
-
+//ไม่ได้ใช้
 exports.isPlayingGame = async (req, res) => {
     const {
         panel_id
@@ -197,13 +197,13 @@ exports.isPlayingGame = async (req, res) => {
                     wallet_token: token
                 }
 
-                console.log('_data', _data);
+                // console.log('_data', _data);
 
                 const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/modify-credit`
 
                 try {
                     const modifyCredit = await axios.post(url, _data)
-                    console.log('modifyCredit', modifyCredit);
+                    // console.log('modifyCredit', modifyCredit);
 
                 } catch (error) {
                     return res.status(400).json({
@@ -260,13 +260,11 @@ exports.checkResult = async (req, res) => {
     } = req.params
 
     const {
-        uu_id,
-        b,
-        tk,
+        wallet_token,
         click_at
     } = req.body
 
-    let token = `${b}[SALT]${tk}[SALT]${uu_id}`
+    let token = wallet_token
 
     if (parseInt(click_at) >= 0 && parseInt(click_at) < 9) {
         const click_at_panel = parseInt(click_at)
@@ -278,7 +276,7 @@ exports.checkResult = async (req, res) => {
             },
         })
 
-        if (panel.uu_id != null && panel.uu_id != tk) {
+        if (panel.uu_id != null && panel.uu_id != token.split('[SALT]')[1]) {
             return res.status(400).json({
                 success: false,
                 errors: 'ขออภัยมี user เล่นแผ่นนี้ไปแล้ว'
@@ -428,34 +426,6 @@ async function setPanelWon(data) {
         return dataResponse
     }
 }
-// exports.setPanelWon = async (req, res) => {
-//     const updateWon = await bomb_panelModel.update({
-//         is_won: req.status,
-//         user_reward: req.status == true ? req.panel_price * 3 : 0
-//     }, {
-//         where: {
-//             id: req.panel_id
-//         }
-//     })
-
-//     if (updateWon && req.status == true) {
-//         const _data = {
-//             modify_cost: req.panel_price * 3,
-//             wallet_token: req.token
-//         }
-
-//         const setWon = await modifyCreditUser(_data)
-
-//         return res.status(200).json({
-//             success: true,
-//             data: setWon
-//         })
-//     }
-//     return res.status(400).json({
-//         success: false,
-//         errors: error.message
-//     })
-// }
 
 async function generateNumber(total_bomb) {
     let totalSlot = 9
@@ -551,28 +521,30 @@ exports.randomPanelToUser = async (req, res) => {
 }
 
 exports.userBuyPanel = async (req, res) => {
+    console.log('user-game/modify-credit');
     const {
-        uu_id,
+        wallet_token,
         panel_price,
         panel_id,
-        b,
-        tk,
     } = req.body
 
-    let token = `${b}[SALT]${tk}[SALT]${uu_id}`
+    let token = wallet_token
+    
 
-    const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/user-credit?wallet_token=${token}`
+    const url = `https://demo-game-api-dev-76iziw7aaq-as.a.run.app/api/v1/user-game/credit?wallet_token=${token}`
 
     try {
+       
 
-        const getUserCredit = await axios.get(url)
-        let user_credit = await getUserCredit.data.data.credit;
-        if (user_credit < panel_price) {
-            return res.status(400).json({
-                success: false,
-                massage: 'จำนวนเงินไม่เพียงพอ'
-            })
-        }
+        // const getUserCredit = await axios.get(url)
+        // console.log('user_credit',user_credit);
+        // let user_credit = await getUserCredit.data.data.credit;
+        // if (user_credit < panel_price) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         massage: 'จำนวนเงินไม่เพียงพอ'
+        //     })
+        // }
 
         const getPanelById = await bomb_panelModel.findOne({
             attributes: ['id', 'panel_name', 'open_panel', 'open_panel_default', 'is_won', 'uu_id', 'panel_price'],
@@ -581,7 +553,7 @@ exports.userBuyPanel = async (req, res) => {
                 uu_id: null
             },
         })
-        // console.log('getPanelById',getPanelById.id);
+        //  console.log('getPanelById',getPanelById.id);
 
         if (!getPanelById) {
             return res.status(400).json({
@@ -591,43 +563,80 @@ exports.userBuyPanel = async (req, res) => {
         }
 
         if (getPanelById) {
-            const updatePlayingGame = {
-                uu_id: tk,
-                panel_price: panel_price,
+            //ตัด point ตอนเล่น
+            const data = {
+                modify_cost: -panel_price,
+                wallet_token: token,
             }
 
-            const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
-                where: {
-                    id: getPanelById.id
-                }
-            })
+            const responser_modi = await modifyCreditUser(data)
+            console.log('responser_modi',responser_modi);
 
-            if (updatePlayingPanel) {
-                //ตัด point ตอนเล่น
-                const data = {
-                    modify_cost: -panel_price,
-                    wallet_token: token,
+            //อัพเดทตาราง
+            if(responser_modi.success) {
+                const updatePlayingGame = {
+                    uu_id: token.split('[SALT]')[1],
+                    panel_price: panel_price,
                 }
 
-                const responser_modi = await modifyCreditUser(data)
-                console.log('responser_modi',responser_modi);
+                const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
+                    where: {
+                        id: getPanelById.id
+                    }
+                })
+                console.log('updatePlayingPanel',updatePlayingPanel);
 
-                if(responser_modi) {
+                if(updatePlayingPanel) {
                     return res.status(200).json({
                         success: true,
                         data: responser_modi
                     })
-                } else {
-                    return res.status(400).json({
-                        success: true,
-                        massage : 'token faild'
-                    })
                 }
+
+                return res.status(400).json({
+                    success: true,
+                    massage : 'update panel faild'
+                })
             }
-            // return res.status(200).json({
-            //     success: true,
-            //     data: responser_modi
+
+            return res.status(400).json({
+                success: true,
+                massage : 'token faild'
+            })
+
+            // const updatePlayingGame = {
+            //     uu_id: tk,
+            //     panel_price: panel_price,
+            // }
+
+            // const updatePlayingPanel = await bomb_panelModel.update(updatePlayingGame, {
+            //     where: {
+            //         id: getPanelById.id
+            //     }
             // })
+
+            // if (updatePlayingPanel) {
+            //     //ตัด point ตอนเล่น
+            //     const data = {
+            //         modify_cost: -panel_price,
+            //         wallet_token: token,
+            //     }
+
+            //     const responser_modi = await modifyCreditUser(data)
+            //     console.log('responser_modi',responser_modi);
+
+            //     if(responser_modi) {
+            //         return res.status(200).json({
+            //             success: true,
+            //             data: responser_modi
+            //         })
+            //     } else {
+            //         return res.status(400).json({
+            //             success: true,
+            //             massage : 'token faild'
+            //         })
+            //     }
+            // }
         }
 
         return res.status(404).json({
@@ -650,10 +659,11 @@ async function modifyCreditUser(data) {
         wallet_token: data.wallet_token
     }
 
-    const url = `https://lottery-api-dev-gye6ncwdlq-as.a.run.app/api/v1/game/modify-credit`
+    const url = `https://demo-game-api-dev-76iziw7aaq-as.a.run.app/api/v1/user-game/modify-credit`
 
     try {
         const modifyCredit = await axios.post(url, _data)
+        console.log('modifyCredit',modifyCredit);
         return modifyCredit.data
 
     } catch (error) {
