@@ -29,7 +29,6 @@ exports.getPanelPrice = async (req, res) => {
 }
 
 exports.ResultLottoHanoi = async (req, res) => {
-    console.log('ResultLottoHanoi');
 
     const {
         round_id
@@ -60,7 +59,7 @@ exports.ResultLottoHanoi = async (req, res) => {
                 "last_two_prize": last_two_prize
             }
 
-            console.log('response',response);
+            // console.log('response',response);
 
             if (!fitrst_prize || fitrst_prize == '' || !last_two_prize || last_two_prize == '') {
                 return res.status(400).json({
