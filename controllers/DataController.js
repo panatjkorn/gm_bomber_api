@@ -1,8 +1,8 @@
 const {
     panel_price: PanelPriceModel,
 } = require("../models")
-// const axios = require('axios');
-// const cheerio = require('cheerio');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 exports.getPanelPrice = async (req, res) => {
     try {
@@ -28,56 +28,59 @@ exports.getPanelPrice = async (req, res) => {
     }
 }
 
-// exports.ResultLottoHanoi = async (req, res) => {
-//     console.log('testtt');
+exports.ResultLottoHanoi = async (req, res) => {
+    console.log('ResultLottoHanoi');
 
-//     const {
-//         round_id
-//     } = req.query;
+    const {
+        round_id
+    } = req.query;
 
-//     const {
-//         adminId
-//     } = req.params;
+    const {
+        adminId
+    } = req.params;
 
-//     try {
+    try {
 
-//         let response = null;
+        let response = null;
 
-//             const url = `https://www.ruay.at/%e0%b8%95%e0%b8%a3%e0%b8%a7%e0%b8%88%e0%b8%ab%e0%b8%a7%e0%b8%a2%e0%b8%ae%e0%b8%b2%e0%b8%99%e0%b8%ad%e0%b8%a2/`
+            const url = `https://www.ruay.at/%e0%b8%95%e0%b8%a3%e0%b8%a7%e0%b8%88%e0%b8%ab%e0%b8%a7%e0%b8%a2%e0%b8%ae%e0%b8%b2%e0%b8%99%e0%b8%ad%e0%b8%a2/`
 
-//             const lottoHanoi = await axios.get(url)
+            const lottoHanoi = await axios.get(url)
+            console.log('lottoHanoi',lottoHanoi);
 
-//             const $ = cheerio.load(lottoHanoi.data)
+            const $ = cheerio.load(lottoHanoi.data)
 
-//             const date = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(1) > td > span > span:nth-child(2)').text().trim()
-//             const fitrst_prize = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(2) > span > span > b').text().trim()
-//             const last_two_prize = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(4) > td:nth-child(2) > span > span > b').text().trim()
+            const date = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(1) > td > span > span:nth-child(2)').text().trim()
+            const fitrst_prize = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(2) > span > span > b').text().trim()
+            const last_two_prize = $('#page > #content > div > section:nth-child(3) > div > div:nth-child(1) > div > div:nth-child(1) > div > div > div > section > div > div > div > div > div > table > tbody > tr:nth-child(4) > td:nth-child(2) > span > span > b').text().trim()
 
-//             response = {
-//                 "date": `${date.split(" ")[1]} ${date.split(" ")[2]} ${date.split(" ")[3]}`,
-//                 "first_prize": fitrst_prize,
-//                 "last_two_prize": last_two_prize
-//             }
+            response = {
+                "date": `${date.split(" ")[1]} ${date.split(" ")[2]} ${date.split(" ")[3]}`,
+                "first_prize": fitrst_prize,
+                "last_two_prize": last_two_prize
+            }
 
-//             if (!fitrst_prize || fitrst_prize == '' || !last_two_prize || last_two_prize == '') {
-//                 return res.status(400).json({
-//                     success: false,
-//                     errors: `ผลยังไม่ออก`
-//                 });
-//             }
+            console.log('response',response);
 
-//             return res.status(200).json({
-//                 success: true,
-//                 data: response
-//             });
+            if (!fitrst_prize || fitrst_prize == '' || !last_two_prize || last_two_prize == '') {
+                return res.status(400).json({
+                    success: false,
+                    errors: `ผลยังไม่ออก`
+                });
+            }
 
-//     } catch (error) {
-//         console.log('error',error);
-//         return res.status(400).json({
-//             success: false,
-//             errors: error.message
-//         });
-//     }
+            return res.status(200).json({
+                success: true,
+                data: response
+            });
 
-// };
+    } catch (error) {
+        console.log('error',error);
+        return res.status(400).json({
+            success: false,
+            errors: error.message
+        });
+    }
+
+};
 

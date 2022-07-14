@@ -8,6 +8,6 @@ const {
 
 router.get("/get_panel_price",getPanelPrice)
 
-// router.post("/result/lottos/hanoi",ResultLottoHanoi)
+router.post("/result/lottos/hanoi",ResultLottoHanoi)
 
 module.exports = router
