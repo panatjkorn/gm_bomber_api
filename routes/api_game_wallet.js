@@ -6,6 +6,6 @@ const {
 } = require("../controllers/GameWalletController")
 
 
-router.get("/init_wallet",initWalletGame)
+// router.get("/init_wallet",initWalletGame)
 
 module.exports = router

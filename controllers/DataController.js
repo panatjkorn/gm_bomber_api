@@ -9,7 +9,6 @@ exports.getPanelPrice = async (req, res) => {
         const getDataPanelPrice = await PanelPriceModel.findAll({
             attributes: ['id', 'price_name', 'price'],
         })
-
         const panelPrice = getDataPanelPrice.map(item => {
             return {
                 id: item.id,
